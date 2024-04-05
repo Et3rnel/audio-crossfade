@@ -1,9 +1,22 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-fn list_mp3_files(dir: &Path) -> Vec<String> {
-    // Temporary dummy return value
-    Vec::new() // Returns an empty vector of String
+fn list_mp3_files(dir: &Path) -> Vec<PathBuf> {
+    let mut files: Vec<PathBuf> = fs::read_dir(dir)
+        .expect("Failed to read directory")
+        .filter_map(|entry| {
+            let entry = entry.expect("Failed to read directory entry");
+            let path = entry.path();
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("mp3") {
+                Some(path)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    files.sort(); // Sorts the files alphabetically
+    files
 }
 
 fn decode_mp3(file_path: &str) -> Vec<i16> {
@@ -25,5 +38,10 @@ fn write_to_wav(output_path: &str, samples: Vec<i16>, sample_rate: u32) {
 }
 
 fn main() {
-    // Your main function logic will go here
+    let dir = Path::new("audio");
+    let files = list_mp3_files(dir);
+    for file in files {
+        println!("{:?}", file);
+    }
 }
+
