@@ -19,11 +19,17 @@ fn list_mp3_files(dir: &Path) -> Vec<PathBuf> {
         })
         .collect();
 
+    for file in &files {
+        println!("Found MP3 file: {:?}", file);
+    }
+
     files.sort(); // Sorts the files alphabetically
     files
 }
 
 fn decode_mp3(file_path: &Path) -> Result<Vec<i16>, Error> {
+    println!("Decoding MP3 file: {:?}", file_path);
+
     let mut decoder = Decoder::new(File::open(file_path)?);
     let mut samples: Vec<i16> = Vec::new();
 
@@ -31,10 +37,13 @@ fn decode_mp3(file_path: &Path) -> Result<Vec<i16>, Error> {
         samples.extend(data);
     }
 
+    println!("Decoding complete: {:?}", file_path);
     Ok(samples)
 }
 
 fn apply_crossfade(tracks: Vec<Vec<i16>>, sample_rate: u32, crossfade_duration_ms: u32) -> Vec<i16> {
+    println!("Starting crossfade process for {} tracks.", tracks.len());
+
     if tracks.len() < 2 {
         return tracks.into_iter().flatten().collect();
     }
@@ -63,9 +72,12 @@ fn apply_crossfade(tracks: Vec<Vec<i16>>, sample_rate: u32, crossfade_duration_m
         output.extend_from_slice(next_track_remainder); // Append remainder of the track
     }
 
+    println!("Crossfade process complete.");
     output
 }
 fn write_to_wav(output_path: &str, samples: Vec<i16>, sample_rate: u32) {
+    println!("Writing to WAV file: {}", output_path);
+
     let spec = hound::WavSpec {
         channels: 2, // Stereo audio
         sample_rate,
@@ -79,9 +91,12 @@ fn write_to_wav(output_path: &str, samples: Vec<i16>, sample_rate: u32) {
     }
 
     writer.finalize().expect("Failed to finalize WAV file");
+    println!("WAV file written: {}", output_path);
 }
 
 fn main() {
+    println!("Starting audio merge process...");
+
     let dir = Path::new("audio");
     let files = list_mp3_files(dir);
     let mut tracks = Vec::new();
@@ -95,4 +110,6 @@ fn main() {
     let merged_samples = apply_crossfade(tracks, SAMPLE_RATE, crossfade_duration_ms);
 
     write_to_wav("audio/output.wav", merged_samples, SAMPLE_RATE);
+
+    println!("Audio merge process complete. Output written to audio/output.wav");
 }
